@@ -1,0 +1,2126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>for kakuly · 22</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Caveat:wght@400;600&family=Playfair+Display:ital,wght@0,400;1,400&display=swap"
+      rel="stylesheet"
+    />
+
+    <script
+      src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"
+    ></script>
+
+    <style>
+      body {
+        min-height: 100vh;
+      }
+    </style>
+    <style>
+      /* styles.css — horizontal intro + generous gutters */
+
+      :root {
+        --bg: #1a1020;
+        --bg-2: #221428;
+        --bg-glow: #2c1832;
+        --ink: #f6e9d8;
+        --ink-dim: rgba(246, 233, 216, 0.62);
+        --ink-faint: rgba(246, 233, 216, 0.34);
+        --accent-a: #ee6a6a;
+        --accent-b: #7ad3c8;
+        --rule: rgba(246, 233, 216, 0.12);
+        --grain: 0.07;
+
+        --gutter-x: clamp(28px, 6vw, 96px);
+        --gutter-y: clamp(40px, 8vh, 96px);
+
+        --font-display: "Instrument Serif", "Playfair Display", Georgia, serif;
+        --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        --font-script: "Caveat", cursive;
+
+        --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+        --ease-fluid: cubic-bezier(0.65, 0.01, 0.05, 1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        color: var(--ink);
+      }
+      body {
+        font-family: var(--font-display);
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+        background:
+          radial-gradient(80vw 60vh at 30% 0%, var(--bg-glow), transparent 60%),
+          radial-gradient(
+            70vw 80vh at 80% 30%,
+            rgba(122, 211, 200, 0.06),
+            transparent 60%
+          ),
+          var(--bg);
+        background-attachment: fixed;
+      }
+
+      /* ── Film grain ──────────────────────────────────────────────────── */
+      .grain {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 9999;
+        opacity: var(--grain);
+        mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+        background-size: 220px 220px;
+        animation: grain-shift 1.4s steps(4) infinite;
+      }
+      @keyframes grain-shift {
+        0% {
+          transform: translate(0, 0);
+        }
+        25% {
+          transform: translate(-6px, 4px);
+        }
+        50% {
+          transform: translate(4px, -6px);
+        }
+        75% {
+          transform: translate(-3px, -4px);
+        }
+        100% {
+          transform: translate(0, 0);
+        }
+      }
+
+      /* ── HORIZONTAL INTRO (scroll-jack) ──────────────────────────────── */
+      .hintro-track {
+        position: relative;
+        height: 380vh; /* the longer this is, the slower & more fluid the X-scroll */
+      }
+      .hintro-sticky {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        /* gutter is enforced by the stages themselves so the row can be 100vw wide */
+        will-change: transform, opacity;
+        transition:
+          transform 0.05s linear,
+          opacity 0.05s linear;
+      }
+      .hintro-row {
+        display: flex;
+        flex-wrap: nowrap;
+        width: 300vw; /* 3 stages × 100vw */
+        height: 100%;
+        will-change: transform;
+        /* No CSS transition — JS lerps the value smoothly already. */
+      }
+      .hintro-stage {
+        flex: 0 0 100vw;
+        height: 100%;
+        padding: var(--gutter-y) var(--gutter-x);
+        display: grid;
+        align-content: center;
+        position: relative;
+        gap: 24px;
+      }
+
+      /* progress dots — fixed in viewport, top-right */
+      .hintro-progress {
+        position: absolute;
+        top: clamp(20px, 3vh, 36px);
+        right: var(--gutter-x);
+        display: flex;
+        gap: 10px;
+        z-index: 5;
+      }
+      .hintro-dot {
+        width: 30px;
+        height: 2px;
+        background: rgba(246, 233, 216, 0.18);
+        transition:
+          background 0.5s var(--ease-out),
+          transform 0.5s var(--ease-out);
+      }
+      .hintro-dot.is-active {
+        background: var(--accent-b);
+        transform: scaleY(2);
+      }
+
+      /* Stage 1 — title */
+      .hintro-stage-1 {
+        align-content: center;
+        justify-items: start;
+      }
+      .hintro-eyebrow {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--accent-a);
+        opacity: var(--vis, 1);
+        transition: opacity 0.3s linear;
+      }
+      .hintro-title {
+        display: grid;
+        line-height: 0.84;
+        letter-spacing: -0.04em;
+        opacity: var(--vis, 1);
+        transition: opacity 0.3s linear;
+      }
+      .t-light {
+        font-size: clamp(56px, 12vw, 200px);
+        font-weight: 300;
+        font-style: italic;
+        color: var(--ink-dim);
+      }
+      .t-italic {
+        font-size: clamp(72px, 15vw, 260px);
+        font-style: italic;
+        color: var(--accent-b);
+        margin-top: -0.06em;
+      }
+      .t-bold {
+        font-size: clamp(80px, 18vw, 300px);
+        letter-spacing: -0.05em;
+        margin-top: -0.05em;
+      }
+
+      .hintro-cue {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        margin-top: clamp(24px, 4vh, 50px);
+        opacity: var(--vis, 1);
+        animation: bob-x 2s ease-in-out infinite;
+      }
+      @keyframes bob-x {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        50% {
+          transform: translateX(8px);
+        }
+      }
+
+      /* Stage 2 — letter */
+      .hintro-stage-2 {
+        align-content: center;
+        max-width: none;
+      }
+      .hintro-letter {
+        margin: 0;
+        font-size: clamp(22px, 2.6vw, 38px);
+        line-height: 1.42;
+        max-width: 30ch;
+        color: var(--ink);
+      }
+      .hintro-letter em {
+        font-style: italic;
+        color: var(--accent-b);
+      }
+      .hintro-letter span {
+        display: block;
+        opacity: var(--vis, 0);
+        transform: translateX(calc((1 - var(--vis, 0)) * 24px));
+        transition:
+          opacity 0.6s var(--ease-fluid),
+          transform 0.6s var(--ease-fluid);
+      }
+      .hintro-letter span:nth-child(1) {
+        transition-delay: 0s;
+      }
+      .hintro-letter span:nth-child(2) {
+        transition-delay: 0.05s;
+      }
+      .hintro-letter span:nth-child(3) {
+        transition-delay: 0.1s;
+      }
+      .hintro-letter span:nth-child(4) {
+        transition-delay: 0.15s;
+      }
+      .hintro-letter span:nth-child(5) {
+        transition-delay: 0.2s;
+      }
+      .hintro-letter span:nth-child(6) {
+        transition-delay: 0.25s;
+      }
+      .hintro-letter span:nth-child(7) {
+        transition-delay: 0.3s;
+      }
+
+      /* Stage 3 — wishes-by-year */
+      .hintro-stage-3 {
+        align-content: center;
+      }
+      .hintro-h3 {
+        font-size: clamp(48px, 8vw, 110px);
+        font-weight: 400;
+        line-height: 0.95;
+        letter-spacing: -0.03em;
+        margin: 0;
+        color: var(--ink);
+        opacity: var(--vis, 0);
+        transform: translateY(calc((1 - var(--vis, 0)) * 24px));
+        transition:
+          opacity 0.4s linear,
+          transform 0.5s var(--ease-fluid);
+      }
+      .hintro-h3 em {
+        font-style: italic;
+        color: var(--accent-b);
+      }
+
+      .hintro-years {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 22px;
+        margin-top: 8px;
+        max-width: 720px;
+        opacity: var(--vis, 0);
+        transition: opacity 0.4s linear;
+      }
+      .hintro-year {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+      .hintro-year-num {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        letter-spacing: 0.15em;
+        color: var(--ink-faint);
+        font-variant-numeric: tabular-nums;
+      }
+      .hintro-year-tick {
+        width: 18px;
+        height: 2px;
+        background: var(--ink);
+        opacity: 0.7;
+        transform: scaleX(var(--vis, 0));
+        transform-origin: left center;
+        transition:
+          transform 0.5s var(--ease-fluid) var(--d),
+          background 0.4s ease;
+      }
+      .hintro-year:last-child .hintro-year-tick {
+        background: var(--accent-a);
+        height: 3px;
+        opacity: 1;
+      }
+
+      .hintro-handoff {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--accent-a);
+        margin-top: clamp(20px, 4vh, 40px);
+        opacity: var(--vis, 0);
+        animation: bob-y 1.6s ease-in-out infinite;
+      }
+      @keyframes bob-y {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(6px);
+        }
+      }
+
+      /* ── LIST ────────────────────────────────────────────────────────── */
+      .list {
+        position: relative;
+        z-index: 2;
+        padding: var(--gutter-y) var(--gutter-x) clamp(80px, 14vh, 160px);
+        margin-top: 0;
+        /* As intro hands off (intro-progress nears 1), the list lifts up gently */
+        transform: translateY(calc((1 - var(--intro-progress, 0)) * 60px));
+        opacity: calc(0.3 + var(--intro-progress, 0) * 0.7);
+        transition:
+          transform 0.2s linear,
+          opacity 0.2s linear;
+      }
+
+      .list-head {
+        display: grid;
+        gap: 18px;
+        padding-bottom: clamp(40px, 8vh, 80px);
+        border-bottom: 1px solid var(--rule);
+        margin-bottom: clamp(20px, 4vh, 40px);
+      }
+      .list-eyebrow {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+      }
+      .list-h2 {
+        font-size: clamp(40px, 7vw, 96px);
+        font-weight: 400;
+        line-height: 0.95;
+        letter-spacing: -0.03em;
+        margin: 0;
+        max-width: 14ch;
+      }
+      .list-h2 em {
+        font-style: italic;
+        color: var(--accent-b);
+      }
+      .list-hint {
+        font-family: var(--font-script);
+        font-size: 22px;
+        color: var(--accent-a);
+      }
+
+      /* ── ROWS ────────────────────────────────────────────────────────── */
+      .rows {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        position: relative;
+      }
+      .row {
+        --rc: var(--accent-b);
+        position: relative;
+        border-bottom: 1px solid var(--rule);
+        isolation: isolate;
+        transition:
+          opacity 0.6s var(--ease-fluid),
+          filter 0.6s var(--ease-fluid),
+          max-height 0.9s var(--ease-fluid);
+        max-height: 200px;
+        overflow: visible;
+      }
+      .row.is-dim {
+        opacity: 0.28;
+        filter: blur(0.5px);
+      }
+
+      .row-bar {
+        position: relative;
+        display: grid;
+        grid-template-columns: 80px 1fr auto auto;
+        align-items: baseline;
+        gap: clamp(12px, 3vw, 36px);
+        width: 100%;
+        padding: clamp(18px, 3.2vw, 28px) 8px;
+        background: transparent;
+        border: 0;
+        text-align: left;
+        color: var(--ink);
+        font-family: inherit;
+        cursor: pointer;
+        opacity: 0;
+        transform: translate3d(60px, 0, 0);
+        transition:
+          opacity 0.9s var(--ease-out),
+          transform 0.9s var(--ease-fluid),
+          padding-left 0.6s var(--ease-fluid),
+          color 0.3s ease;
+        transition-delay: var(--delay, 0ms);
+      }
+      .row.is-in .row-bar {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+
+      .row-bar::before {
+        content: "";
+        position: absolute;
+        left: -8px;
+        right: -8px;
+        top: 0;
+        bottom: 0;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          color-mix(in oklab, var(--rc) 22%, transparent) 40%,
+          transparent
+        );
+        opacity: 0;
+        transition: opacity 0.5s var(--ease-out);
+        z-index: -1;
+      }
+      .row-bar:hover::before {
+        opacity: 1;
+      }
+      .row-bar:hover {
+        padding-left: 28px;
+      }
+      .row-bar:hover .row-title {
+        color: var(--rc);
+        font-style: italic;
+      }
+      .row-bar:hover .row-arrow {
+        transform: translateX(8px);
+        color: var(--rc);
+      }
+      .row-bar:hover .row-rule {
+        transform: scaleX(1);
+        background: var(--rc);
+      }
+
+      .row-num {
+        font-family: var(--font-mono);
+        font-size: clamp(11px, 1.2vw, 13px);
+        letter-spacing: 0.15em;
+        color: var(--ink-faint);
+        font-variant-numeric: tabular-nums;
+        align-self: center;
+      }
+      .row-title {
+        font-size: clamp(32px, 6vw, 88px);
+        font-weight: 400;
+        letter-spacing: -0.025em;
+        line-height: 1;
+        color: var(--ink);
+        transition:
+          color 0.4s var(--ease-out),
+          transform 0.85s var(--ease-fluid),
+          font-style 0.001s;
+      }
+      .row-arrow {
+        align-self: center;
+        color: var(--ink-faint);
+        transition:
+          transform 0.4s var(--ease-out),
+          color 0.3s ease,
+          opacity 0.4s ease;
+      }
+      .row-rule {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        height: 1px;
+        background: var(--ink);
+        transform: scaleX(0);
+        transform-origin: left center;
+        transition:
+          transform 0.6s var(--ease-fluid),
+          background 0.3s;
+      }
+      .row-of {
+        align-self: center;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--ink-faint);
+        letter-spacing: 0.1em;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* INLINE DETAIL */
+      .row-detail {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition:
+          max-height 0.85s var(--ease-fluid),
+          opacity 0.5s var(--ease-fluid);
+      }
+      .row.is-open .row-detail {
+        max-height: 720px;
+        opacity: 1;
+      }
+      .row.is-open {
+        max-height: 1200px;
+        background: linear-gradient(
+          180deg,
+          transparent 0%,
+          color-mix(in oklab, var(--rc) 6%, transparent) 30%,
+          color-mix(in oklab, var(--rc) 6%, transparent) 70%,
+          transparent 100%
+        );
+      }
+      .row.is-open .row-bar {
+        padding-left: 28px;
+        cursor: zoom-out;
+      }
+      .row.is-open .row-bar::before {
+        opacity: 1;
+      }
+      .row.is-open .row-title {
+        font-style: italic;
+        color: var(--rc);
+        transform: translateX(-12px);
+        font-size: clamp(24px, 4.4vw, 60px);
+      }
+      .row.is-open .row-arrow {
+        transform: rotate(90deg) translateX(2px);
+        color: var(--rc);
+      }
+      .row.is-open .row-rule {
+        transform: scaleX(1);
+        background: var(--rc);
+      }
+
+      .row-detail-inner {
+        display: grid;
+        grid-template-columns: 1.05fr 1fr;
+        gap: clamp(20px, 3.5vw, 56px);
+        padding: clamp(20px, 3.2vw, 40px) 8px clamp(40px, 6vh, 72px);
+        align-items: center;
+      }
+      @media (max-width: 760px) {
+        .row-detail-inner {
+          grid-template-columns: 1fr;
+          gap: 22px;
+        }
+      }
+
+      .row-detail-image {
+        position: relative;
+        aspect-ratio: 5 / 4;
+        background: #2a1d2e;
+        overflow: hidden;
+        border: 1px solid var(--rule);
+        transform: translate3d(-60px, 0, 0);
+        opacity: 0;
+        transition:
+          transform 0.95s var(--ease-fluid) 0.1s,
+          opacity 0.7s ease 0.1s;
+      }
+      .row.is-open .row-detail-image {
+        transform: translate3d(0, 0, 0);
+        opacity: 1;
+      }
+      .row-detail-image-inner {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: slow-zoom 14s ease-in-out infinite alternate;
+      }
+      .row-detail-stripe {
+        position: absolute;
+        inset: 0;
+        background-image: repeating-linear-gradient(
+          45deg,
+          rgba(255, 255, 255, 0.05) 0 1px,
+          transparent 1px 14px
+        );
+      }
+      .row-detail-label {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        color: rgba(255, 255, 255, 0.5);
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        padding: 8px 14px;
+        background: rgba(0, 0, 0, 0.4);
+      }
+      @keyframes slow-zoom {
+        0% {
+          transform: scale(1);
+        }
+        100% {
+          transform: scale(1.06);
+        }
+      }
+
+      .row-detail-text {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        transform: translate3d(60px, 0, 0);
+        opacity: 0;
+        transition:
+          transform 0.95s var(--ease-fluid) 0.18s,
+          opacity 0.7s ease 0.18s;
+      }
+      .row.is-open .row-detail-text {
+        transform: translate3d(0, 0, 0);
+        opacity: 1;
+      }
+
+      .row-detail-meta {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+      .row-detail-num {
+        color: var(--rc);
+      }
+      .row-detail-of {
+        color: var(--ink-faint);
+      }
+
+      .row-detail-body {
+        font-size: clamp(17px, 1.3vw, 22px);
+        line-height: 1.55;
+        color: var(--ink-dim);
+        max-width: 50ch;
+        margin: 0;
+      }
+      .row-detail-body::first-letter {
+        font-size: 1.6em;
+        line-height: 1;
+        color: var(--rc);
+        padding-right: 4px;
+        font-style: italic;
+      }
+
+      .row-detail-close {
+        align-self: flex-start;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--rule);
+        padding: 8px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        transition:
+          background 0.3s,
+          color 0.3s,
+          border-color 0.3s;
+        margin-top: 4px;
+      }
+      .row-detail-close:hover {
+        background: color-mix(in oklab, var(--rc) 18%, transparent);
+        border-color: var(--rc);
+        color: var(--rc);
+      }
+
+      .list-foot {
+        margin-top: clamp(60px, 10vh, 120px);
+        padding-top: clamp(40px, 6vh, 60px);
+        border-top: 1px solid var(--rule);
+        text-align: center;
+      }
+      .list-foot-line {
+        font-size: clamp(34px, 6vw, 72px);
+        font-style: italic;
+        letter-spacing: -0.02em;
+      }
+      .list-foot-em {
+        color: var(--accent-a);
+      }
+      .list-foot-sub {
+        margin-top: 18px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+        }
+      }
+
+      /* ── Hero photo (between intro and list) ────────────────────────── */
+      .hero-photo {
+        position: relative;
+        width: 100%;
+        max-height: 90vh;
+        overflow: hidden;
+      }
+      .hero-photo img {
+        width: 100%;
+        max-height: 90vh;
+        object-fit: cover;
+        display: block;
+        opacity: 0.9;
+        /* subtle Ken Burns drift */
+        animation: hero-drift 18s ease-in-out infinite alternate;
+      }
+      @keyframes hero-drift {
+        0% {
+          transform: scale(1) translateY(0);
+        }
+        100% {
+          transform: scale(1.06) translateY(-2%);
+        }
+      }
+      /* gradient fade at bottom so it bleeds into the list */
+      .hero-photo::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 45%;
+        background: linear-gradient(to bottom, transparent, var(--bg));
+        pointer-events: none;
+      }
+      /* caption bottom-left */
+      .hero-photo-caption {
+        position: absolute;
+        bottom: clamp(24px, 5vh, 52px);
+        left: var(--gutter-x);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+        z-index: 2;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      // tweaks-panel.jsx
+      // Reusable Tweaks shell + form-control helpers.
+      //
+      // Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
+      // posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
+      // individual prototypes don't re-roll it. Ships a consistent set of controls so you
+      // don't hand-draw <input type="range">, segmented radios, steppers, etc.
+      //
+      // Usage (in an HTML file that loads React + Babel):
+      //
+      //   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      //     "primaryColor": "#D97757",
+      //     "fontSize": 16,
+      //     "density": "regular",
+      //     "dark": false
+      //   }/*EDITMODE-END*/;
+      //
+      //   function App() {
+      //     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      //     return (
+      //       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
+      //         Hello
+      //         <TweaksPanel>
+      //           <TweakSection label="Typography" />
+      //           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
+      //                        onChange={(v) => setTweak('fontSize', v)} />
+      //           <TweakRadio  label="Density" value={t.density}
+      //                        options={['compact', 'regular', 'comfy']}
+      //                        onChange={(v) => setTweak('density', v)} />
+      //           <TweakSection label="Theme" />
+      //           <TweakColor  label="Primary" value={t.primaryColor}
+      //                        onChange={(v) => setTweak('primaryColor', v)} />
+      //           <TweakToggle label="Dark mode" value={t.dark}
+      //                        onChange={(v) => setTweak('dark', v)} />
+      //         </TweaksPanel>
+      //       </div>
+      //     );
+      //   }
+      //
+      // ─────────────────────────────────────────────────────────────────────────────
+
+      const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;width:100%;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;height:22px;
+    border-radius:6px;cursor:default;padding:0}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+`;
+
+      // ── useTweaks ───────────────────────────────────────────────────────────────
+      // Single source of truth for tweak values. setTweak persists via the host
+      // (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
+      function useTweaks(defaults) {
+        const [values, setValues] = React.useState(defaults);
+        const setTweak = React.useCallback((keyOrObj, val) => {
+          if (keyOrObj !== null && typeof keyOrObj === "object") {
+            // called as setT({ key: val, ... })
+            setValues((prev) => ({ ...prev, ...keyOrObj }));
+            window.parent.postMessage(
+              { type: "__edit_mode_set_keys", edits: keyOrObj },
+              "*",
+            );
+          } else {
+            // called as setT('key', val)
+            setValues((prev) => ({ ...prev, [keyOrObj]: val }));
+            window.parent.postMessage(
+              { type: "__edit_mode_set_keys", edits: { [keyOrObj]: val } },
+              "*",
+            );
+          }
+        }, []);
+        return [values, setTweak];
+      }
+
+      // ── TweaksPanel ─────────────────────────────────────────────────────────────
+      // Floating shell. Registers the protocol listener BEFORE announcing
+      // availability — if the announce ran first, the host's activate could land
+      // before our handler exists and the toolbar toggle would silently no-op.
+      // The close button posts __edit_mode_dismissed so the host's toolbar toggle
+      // flips off in lockstep; the host echoes __deactivate_edit_mode back which
+      // is what actually hides the panel.
+      function TweaksPanel({ title = "Tweaks", children }) {
+        const [open, setOpen] = React.useState(false);
+        const dragRef = React.useRef(null);
+        const offsetRef = React.useRef({ x: 16, y: 16 });
+        const PAD = 16;
+
+        const clampToViewport = React.useCallback(() => {
+          const panel = dragRef.current;
+          if (!panel) return;
+          const w = panel.offsetWidth,
+            h = panel.offsetHeight;
+          const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+          const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+          offsetRef.current = {
+            x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+            y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+          };
+          panel.style.right = offsetRef.current.x + "px";
+          panel.style.bottom = offsetRef.current.y + "px";
+        }, []);
+
+        React.useEffect(() => {
+          if (!open) return;
+          clampToViewport();
+          if (typeof ResizeObserver === "undefined") {
+            window.addEventListener("resize", clampToViewport);
+            return () => window.removeEventListener("resize", clampToViewport);
+          }
+          const ro = new ResizeObserver(clampToViewport);
+          ro.observe(document.documentElement);
+          return () => ro.disconnect();
+        }, [open, clampToViewport]);
+
+        React.useEffect(() => {
+          const onMsg = (e) => {
+            const t = e?.data?.type;
+            if (t === "__activate_edit_mode") setOpen(true);
+            else if (t === "__deactivate_edit_mode") setOpen(false);
+          };
+          window.addEventListener("message", onMsg);
+          window.parent.postMessage({ type: "__edit_mode_available" }, "*");
+          return () => window.removeEventListener("message", onMsg);
+        }, []);
+
+        const dismiss = () => {
+          setOpen(false);
+          window.parent.postMessage({ type: "__edit_mode_dismissed" }, "*");
+        };
+
+        const onDragStart = (e) => {
+          const panel = dragRef.current;
+          if (!panel) return;
+          const r = panel.getBoundingClientRect();
+          const sx = e.clientX,
+            sy = e.clientY;
+          const startRight = window.innerWidth - r.right;
+          const startBottom = window.innerHeight - r.bottom;
+          const move = (ev) => {
+            offsetRef.current = {
+              x: startRight - (ev.clientX - sx),
+              y: startBottom - (ev.clientY - sy),
+            };
+            clampToViewport();
+          };
+          const up = () => {
+            window.removeEventListener("mousemove", move);
+            window.removeEventListener("mouseup", up);
+          };
+          window.addEventListener("mousemove", move);
+          window.addEventListener("mouseup", up);
+        };
+
+        if (!open) return null;
+        return (
+          <>
+            <style>{__TWEAKS_STYLE}</style>
+            <div
+              ref={dragRef}
+              className="twk-panel"
+              style={{
+                right: offsetRef.current.x,
+                bottom: offsetRef.current.y,
+              }}
+            >
+              <div className="twk-hd" onMouseDown={onDragStart}>
+                <b>{title}</b>
+                <button
+                  className="twk-x"
+                  aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="twk-body">{children}</div>
+            </div>
+          </>
+        );
+      }
+
+      // ── Layout helpers ──────────────────────────────────────────────────────────
+
+      function TweakSection({ label, title, children }) {
+        return (
+          <>
+            <div className="twk-sect">{title || label}</div>
+            {children}
+          </>
+        );
+      }
+
+      function TweakRow({ label, value, children, inline = false }) {
+        return (
+          <div className={inline ? "twk-row twk-row-h" : "twk-row"}>
+            <div className="twk-lbl">
+              <span>{label}</span>
+              {value != null && <span className="twk-val">{value}</span>}
+            </div>
+            {children}
+          </div>
+        );
+      }
+
+      // ── Controls ────────────────────────────────────────────────────────────────
+
+      function TweakSlider({
+        label,
+        value,
+        min = 0,
+        max = 100,
+        step = 1,
+        unit = "",
+        onChange,
+      }) {
+        return (
+          <TweakRow label={label} value={`${value}${unit}`}>
+            <input
+              type="range"
+              className="twk-slider"
+              min={min}
+              max={max}
+              step={step}
+              value={value}
+              onChange={(e) => onChange(Number(e.target.value))}
+            />
+          </TweakRow>
+        );
+      }
+
+      function TweakToggle({ label, value, onChange }) {
+        return (
+          <div className="twk-row twk-row-h">
+            <div className="twk-lbl">
+              <span>{label}</span>
+            </div>
+            <button
+              type="button"
+              className="twk-toggle"
+              data-on={value ? "1" : "0"}
+              role="switch"
+              aria-checked={!!value}
+              onClick={() => onChange(!value)}
+            >
+              <i />
+            </button>
+          </div>
+        );
+      }
+
+      function TweakRadio({ label, value, options, onChange }) {
+        const trackRef = React.useRef(null);
+        const [dragging, setDragging] = React.useState(false);
+        const opts = options.map((o) =>
+          typeof o === "object" ? o : { value: o, label: o },
+        );
+        const idx = Math.max(
+          0,
+          opts.findIndex((o) => o.value === value),
+        );
+        const n = opts.length;
+
+        // The active value is read by pointer-move handlers attached for the lifetime
+        // of a drag — ref it so a stale closure doesn't fire onChange for every move.
+        const valueRef = React.useRef(value);
+        valueRef.current = value;
+
+        const segAt = (clientX) => {
+          const r = trackRef.current.getBoundingClientRect();
+          const inner = r.width - 4;
+          const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+          return opts[Math.max(0, Math.min(n - 1, i))].value;
+        };
+
+        const onPointerDown = (e) => {
+          setDragging(true);
+          const v0 = segAt(e.clientX);
+          if (v0 !== valueRef.current) onChange(v0);
+          const move = (ev) => {
+            if (!trackRef.current) return;
+            const v = segAt(ev.clientX);
+            if (v !== valueRef.current) onChange(v);
+          };
+          const up = () => {
+            setDragging(false);
+            window.removeEventListener("pointermove", move);
+            window.removeEventListener("pointerup", up);
+          };
+          window.addEventListener("pointermove", move);
+          window.addEventListener("pointerup", up);
+        };
+
+        return (
+          <TweakRow label={label}>
+            <div
+              ref={trackRef}
+              role="radiogroup"
+              onPointerDown={onPointerDown}
+              className={dragging ? "twk-seg dragging" : "twk-seg"}
+            >
+              <div
+                className="twk-seg-thumb"
+                style={{
+                  left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                  width: `calc((100% - 4px) / ${n})`,
+                }}
+              />
+              {opts.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={o.value === value}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </TweakRow>
+        );
+      }
+
+      function TweakSelect({ label, value, options, onChange }) {
+        return (
+          <TweakRow label={label}>
+            <select
+              className="twk-field"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+            >
+              {options.map((o) => {
+                const v = typeof o === "object" ? o.value : o;
+                const l = typeof o === "object" ? o.label : o;
+                return (
+                  <option key={v} value={v}>
+                    {l}
+                  </option>
+                );
+              })}
+            </select>
+          </TweakRow>
+        );
+      }
+
+      function TweakText({ label, value, placeholder, onChange }) {
+        return (
+          <TweakRow label={label}>
+            <input
+              className="twk-field"
+              type="text"
+              value={value}
+              placeholder={placeholder}
+              onChange={(e) => onChange(e.target.value)}
+            />
+          </TweakRow>
+        );
+      }
+
+      function TweakNumber({
+        label,
+        value,
+        min,
+        max,
+        step = 1,
+        unit = "",
+        onChange,
+      }) {
+        const clamp = (n) => {
+          if (min != null && n < min) return min;
+          if (max != null && n > max) return max;
+          return n;
+        };
+        const startRef = React.useRef({ x: 0, val: 0 });
+        const onScrubStart = (e) => {
+          e.preventDefault();
+          startRef.current = { x: e.clientX, val: value };
+          const decimals = (String(step).split(".")[1] || "").length;
+          const move = (ev) => {
+            const dx = ev.clientX - startRef.current.x;
+            const raw = startRef.current.val + dx * step;
+            const snapped = Math.round(raw / step) * step;
+            onChange(clamp(Number(snapped.toFixed(decimals))));
+          };
+          const up = () => {
+            window.removeEventListener("pointermove", move);
+            window.removeEventListener("pointerup", up);
+          };
+          window.addEventListener("pointermove", move);
+          window.addEventListener("pointerup", up);
+        };
+        return (
+          <div className="twk-num">
+            <span className="twk-num-lbl" onPointerDown={onScrubStart}>
+              {label}
+            </span>
+            <input
+              type="number"
+              value={value}
+              min={min}
+              max={max}
+              step={step}
+              onChange={(e) => onChange(clamp(Number(e.target.value)))}
+            />
+            {unit && <span className="twk-num-unit">{unit}</span>}
+          </div>
+        );
+      }
+
+      function TweakColor({ label, value, onChange }) {
+        return (
+          <div className="twk-row twk-row-h">
+            <div className="twk-lbl">
+              <span>{label}</span>
+            </div>
+            <input
+              type="color"
+              className="twk-swatch"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+            />
+          </div>
+        );
+      }
+
+      function TweakButton({ label, onClick, secondary = false }) {
+        return (
+          <button
+            type="button"
+            className={secondary ? "twk-btn secondary" : "twk-btn"}
+            onClick={onClick}
+          >
+            {label}
+          </button>
+        );
+      }
+
+      Object.assign(window, {
+        useTweaks,
+        TweaksPanel,
+        TweakSection,
+        TweakRow,
+        TweakSlider,
+        TweakToggle,
+        TweakRadio,
+        TweakSelect,
+        TweakText,
+        TweakNumber,
+        TweakColor,
+        TweakButton,
+      });
+    </script>
+
+    <script type="text/babel">
+      // reasons.jsx
+      // Now: a HORIZONTAL scroll-jack opening, then a smooth handoff into the
+      // vertical list.
+      //
+      // How:
+      //   • <HorizontalIntro> is a tall (e.g. 350vh) "scroll track" that contains
+      //     a sticky 100vh viewport. The viewport holds three big "stages" laid
+      //     out in a row inside a flex container that we translateX based on
+      //     scroll progress through the track. As the user scrolls DOWN, the
+      //     content moves LEFT. It feels like horizontal scrolling.
+      //   • Stages: (1) "happy birthday, kakuly", (2) the 22-line letter,
+      //     (3) the year ticks + a "↓ now scroll down" handoff cue.
+      //   • At the very end of the track, the entire horizontal stage softly
+      //     fades + scales down + lifts as the LIST below begins to enter from
+      //     below — that's the "smooth animations to change to scrolling down".
+      //   • The list itself has generous gutters now (left/right margins +
+      //     vertical breathing) so nothing kisses the edges.
+
+      const REASONS = [
+        {
+          t: "your big heart",
+          c: "#f5b945",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/1.jpg",
+          body: "You care for people and animals alike, without being asked and without keeping score. The size of your heart is one of the first things I noticed about you, and it still catches me off guard.",
+        },
+        {
+          t: "your understanding",
+          c: "#7ad3c8",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/2.jpg",
+          body: "You never make me feel like I need to explain myself twice. You get it — the mood, the silence, the thing I am trying to say but haven't found words for yet. That is rarer than you know.",
+        },
+        {
+          t: "your courage",
+          c: "#f5b945",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/3.jpg",
+          body: "You do hard things quietly. You walk into rooms that scare you and you don't let it show. I have watched you be brave in ways you don't even call brave, and it makes me want to be better.",
+        },
+        {
+          t: "how brilliant you are",
+          c: "#c9a8ee",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/4.jpg",
+          body: "You are sharp in the way that sneaks up on you. Mid-conversation, a sentence lands and I think — she is really something. Competent, thoughtful, quietly formidable.",
+        },
+        {
+          t: "my ball of sunshine",
+          c: "#7ad3c8",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/5.jpg",
+          body: "You walk into a room and something shifts. The energy lifts. People smile without knowing why. You carry warmth like it costs you nothing, and it changes everything around you.",
+        },
+        {
+          t: "your confidence",
+          c: "#f5b945",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/6.jpg",
+          body: "You know who you are. You wear it without announcing it. That kind of confidence — quiet, settled, real — is magnetic, and I don't think you fully see how much.",
+        },
+        {
+          t: "tubelight",
+          c: "#ee6a6a",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/7.jpg",
+          body: "You glow even when you don't mean to. The nickname is a fact, not a joke. A little slow to start, and then suddenly — fully, brilliantly on.",
+        },
+        {
+          t: "how you take care of me",
+          c: "#7ad3c8",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/8.jpg",
+          body: "You ask if I have eaten. You check in without making it a big deal. You notice when something is off before I've admitted it to myself. Being cared for by you feels like the safest place I know.",
+        },
+        {
+          t: "your friends",
+          c: "#ee6a6a",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/9.jpg",
+          body: "They love you fiercely, and I understand exactly why. You collect good people the way other people collect things. The company you keep says everything about you.",
+        },
+        {
+          t: "how hard you work",
+          c: "#c9a8ee",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/10.jpg",
+          body: "You don't do things halfway. You show up, you stay, you finish. Watching you work is watching someone who takes their life seriously — and that is one of the most attractive things about you.",
+        },
+        {
+          t: "your energy",
+          c: "#f5b945",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/11.jpg",
+          body: "You are always moving, always on, always in it. Your enthusiasm for life is contagious in the best way. I have done things I never would have done alone, just because your energy made them feel possible.",
+        },
+        {
+          t: "your patience",
+          c: "#ee6a6a",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/12.jpg",
+          body: "I am, frankly, a project. You take me anyway, every day, and somehow the math always adds up. Your patience with me is a gift I don't deserve but am very grateful for.",
+        },
+        {
+          t: "your beauty",
+          c: "#7ad3c8",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/13.jpg",
+          body: "Not just the kind you see. The way your face moves when you're excited. The way you look when you don't know I'm looking. You are, in every version of yourself, extremely beautiful.",
+        },
+        {
+          t: "your wandering soul",
+          c: "#f5b945",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/14.jpg",
+          body: "You love to explore — places, cultures, people, ideas. The world genuinely excites you. Traveling with you isn't just going somewhere; it's seeing somewhere through eyes that actually want to be there.",
+        },
+        {
+          t: "the way you host",
+          c: "#c9a8ee",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/15.jpg",
+          body: "Everyone feels welcome around you. You make people feel seen, fed, comfortable, included. Hosting is a form of love and you do it better than most.",
+        },
+        {
+          t: "you've always been there for me",
+          c: "#ee6a6a",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/16.jpg",
+          body: "On the hard days and the boring ones. Without a fuss, without conditions. You just show up. I do not take that lightly, and I hope I never do.",
+        },
+        {
+          t: "how you love",
+          c: "#7ad3c8",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/17.jpg",
+          body: "Loudly, specifically, beautifully. You express love in ways that actually land. You don't assume people know — you tell them, show them, remind them. I have learned how to love better from watching you.",
+        },
+        {
+          t: "our late-night conversations",
+          c: "#f5b945",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/18.jpg",
+          body: "When the lights are low and you start telling me what you are really thinking. Those conversations live in a special part of my memory. I would stay up forever for them.",
+        },
+        {
+          t: "your perfectionism",
+          c: "#c9a8ee",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/19.jpg",
+          body: "You care about doing things right. You don't settle. It shows up in everything — the way you work, the way you plan, the way you love. It can drive you a little crazy, but it makes everything you touch better.",
+        },
+        {
+          t: "what you make me",
+          c: "#7ad3c8",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/20.jpg",
+          body: "You make me want to be more patient, more present, more honest. Not by asking me to change — just by being the kind of person that makes you want to be better. That is a rare thing to do to someone.",
+        },
+        {
+          t: "coming all the way to italy",
+          c: "#ee6a6a",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/21.jpg",
+          body: "You are crossing the world to be here. I cannot wait to walk you down a small street and watch you light up. The whole country is going to fall a little in love.",
+        },
+        {
+          t: "that you're mine",
+          c: "#7ad3c8",
+          img: "https://raw.githubusercontent.com/BullsEye268/kakus_birthday_2026/refs/heads/main/Images/22.jpg",
+          body: "Out of all the lives, this one. Out of all the people, you. Twenty-two years made of this exact person, and I get to know her. Happy birthday, my baba.",
+        },
+      ];
+
+      // ── HORIZONTAL INTRO (scroll-jacked) ──────────────────────────────────
+      // All scroll-driven motion is done by writing CSS variables directly to
+      // DOM nodes via a single rAF loop — NO React state updates per frame.
+      // Per-frame setState was tearing down the effect; this is both correct
+      // and faster.
+      function HorizontalIntro() {
+        const trackRef = React.useRef(null);
+        const stickyRef = React.useRef(null);
+        const rowRef = React.useRef(null);
+        const dotRefs = [
+          React.useRef(null),
+          React.useRef(null),
+          React.useRef(null),
+        ];
+        const stage1Ref = React.useRef(null);
+        const stage2Ref = React.useRef(null);
+        const stage3Ref = React.useRef(null);
+
+        React.useEffect(() => {
+          let raf;
+          let current = 0;
+
+          const tick = () => {
+            const el = trackRef.current;
+            if (!el) {
+              raf = requestAnimationFrame(tick);
+              return;
+            }
+            const r = el.getBoundingClientRect();
+            const trackHeight = el.offsetHeight - window.innerHeight;
+            const target =
+              trackHeight > 0
+                ? Math.max(0, Math.min(1, -r.top / trackHeight))
+                : 0;
+
+            // Lerp toward the target — that's the "fluid" feel.
+            current += (target - current) * 0.12;
+            if (Math.abs(target - current) < 0.0005) current = target;
+            const p = current;
+
+            const moveP = Math.min(1, p / 0.92);
+            const x = -moveP * 200; // vw
+
+            const handoff = Math.max(0, (p - 0.92) / 0.08);
+            const stageScale = 1 - handoff * 0.05;
+            const stageY = -handoff * 30;
+            const stageFade = 1 - handoff * 0.5;
+
+            const s1 = 1 - Math.min(1, Math.max(0, (moveP - 0.0) / 0.4));
+            const s2 = Math.max(0, 1 - Math.abs(moveP - 0.5) * 2.4);
+            const s3 = Math.min(1, Math.max(0, (moveP - 0.6) / 0.35));
+
+            if (rowRef.current)
+              rowRef.current.style.transform = `translate3d(${x}vw, 0, 0)`;
+            if (stickyRef.current) {
+              stickyRef.current.style.transform = `translate3d(0, ${stageY}px, 0) scale(${stageScale})`;
+              stickyRef.current.style.opacity = stageFade.toFixed(3);
+            }
+            if (stage1Ref.current)
+              stage1Ref.current.style.setProperty("--vis", s1.toFixed(3));
+            if (stage2Ref.current)
+              stage2Ref.current.style.setProperty("--vis", s2.toFixed(3));
+            if (stage3Ref.current)
+              stage3Ref.current.style.setProperty("--vis", s3.toFixed(3));
+
+            // Progress dots
+            const stages = [0, 0.5, 1];
+            for (let i = 0; i < 3; i++) {
+              const dot = dotRefs[i].current;
+              if (!dot) continue;
+              const active = Math.abs(moveP - stages[i]) < 0.18;
+              dot.classList.toggle("is-active", active);
+            }
+
+            // Pipe to root for list lift/fade
+            document.documentElement.style.setProperty(
+              "--intro-progress",
+              p.toFixed(3),
+            );
+
+            raf = requestAnimationFrame(tick);
+          };
+          raf = requestAnimationFrame(tick);
+          return () => cancelAnimationFrame(raf);
+        }, []);
+
+        return (
+          <div
+            ref={trackRef}
+            className="hintro-track"
+            aria-label="happy birthday — horizontal intro"
+          >
+            <div ref={stickyRef} className="hintro-sticky">
+              {/* progress dots */}
+              <div className="hintro-progress" aria-hidden="true">
+                <span ref={dotRefs[0]} className="hintro-dot is-active" />
+                <span ref={dotRefs[1]} className="hintro-dot" />
+                <span ref={dotRefs[2]} className="hintro-dot" />
+              </div>
+
+              <div ref={rowRef} className="hintro-row">
+                {/* Stage 1 — title */}
+                <section
+                  ref={stage1Ref}
+                  className="hintro-stage hintro-stage-1"
+                  style={{ "--vis": 1 }}
+                >
+                  <div className="hintro-eyebrow">for kakuly · twenty-two</div>
+                  <div className="hintro-title">
+                    <span className="t-light">happy</span>
+                    <span className="t-italic">birthday,</span>
+                    <span className="t-bold">kakuly.</span>
+                  </div>
+                  <div className="hintro-cue">
+                    <span>scroll</span>
+                    <svg
+                      width="40"
+                      height="10"
+                      viewBox="0 0 40 10"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    >
+                      <path d="M1 5h36M32 1l5 4-5 4" />
+                    </svg>
+                  </div>
+                </section>
+
+                {/* Stage 2 — letter / wishes */}
+                <section
+                  ref={stage2Ref}
+                  className="hintro-stage hintro-stage-2"
+                  style={{ "--vis": 0 }}
+                >
+                  <div className="hintro-eyebrow">
+                    a little letter, before the list
+                  </div>
+                  <p className="hintro-letter">
+                    <span>
+                      my baba — happy <em>twenty-second</em> birthday.
+                    </span>
+                    <span>
+                      i hope this year is kinder than the last and softer than
+                      the next,
+                    </span>
+                    <span>
+                      that you keep laughing too loud and listening too closely,
+                    </span>
+                    <span>that you read more, sing more, sleep enough,</span>
+                    <span>
+                      that lavender keeps following you, and turquoise keeps
+                      finding you,
+                    </span>
+                    <span>
+                      and that, when italy finally happens, it is even better
+                      than we pictured.
+                    </span>
+                    <span>
+                      below — twenty-two reasons. one for every year of you.
+                    </span>
+                  </p>
+                </section>
+
+                {/* Stage 3 — wishes-by-year + handoff */}
+                <section
+                  ref={stage3Ref}
+                  className="hintro-stage hintro-stage-3"
+                  style={{ "--vis": 0 }}
+                >
+                  <div className="hintro-eyebrow">a wish for every year</div>
+                  <h3 className="hintro-h3">
+                    twenty-two
+                    <br />
+                    candles
+                    <br />
+                    <em>on the cake.</em>
+                  </h3>
+                  <div
+                    className="hintro-years"
+                    aria-label="22 ticks, one per year"
+                  >
+                    {Array.from({ length: 22 }, (_, i) => (
+                      <span
+                        key={i}
+                        className="hintro-year"
+                        style={{ "--d": `${i * 30}ms` }}
+                      >
+                        <span className="hintro-year-num">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <span className="hintro-year-tick" />
+                      </span>
+                    ))}
+                  </div>
+                  <div className="hintro-handoff">
+                    <span>now — scroll down</span>
+                    <svg
+                      width="10"
+                      height="40"
+                      viewBox="0 0 10 40"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    >
+                      <path d="M5 1v36M1 32l4 5 4-5" />
+                    </svg>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // ── A single REASON row + inline expansion ─────────────────────────────
+      function ReasonRow({ index, reason, total, isOpen, anyOpen, onToggle }) {
+        const ref = React.useRef(null);
+        const [seen, setSeen] = React.useState(false);
+        React.useEffect(() => {
+          const io = new IntersectionObserver(
+            (es) => {
+              for (const e of es)
+                if (e.isIntersecting) {
+                  setSeen(true);
+                  io.disconnect();
+                }
+            },
+            { threshold: 0.2 },
+          );
+          if (ref.current) io.observe(ref.current);
+          return () => io.disconnect();
+        }, []);
+
+        const dim = anyOpen && !isOpen;
+        const num = String(index + 1).padStart(2, "0");
+
+        return (
+          <li
+            ref={ref}
+            className={[
+              "row",
+              seen ? "is-in" : "",
+              isOpen ? "is-open" : "",
+              dim ? "is-dim" : "",
+            ]
+              .join(" ")
+              .trim()}
+            style={{ "--rc": reason.c, "--delay": `${(index % 4) * 60}ms` }}
+          >
+            <button
+              className="row-bar"
+              onClick={() => onToggle(index)}
+              aria-expanded={isOpen}
+            >
+              <span className="row-num">{num}</span>
+              <span className="row-title">{reason.t}</span>
+              <span className="row-arrow" aria-hidden="true">
+                <svg
+                  width="22"
+                  height="14"
+                  viewBox="0 0 22 14"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M1 7h19M14 1l6 6-6 6" />
+                </svg>
+              </span>
+              <span className="row-rule" aria-hidden="true" />
+              <span className="row-of">
+                {num} / {String(total).padStart(2, "0")}
+              </span>
+            </button>
+
+            <div className="row-detail" aria-hidden={!isOpen}>
+              <div className="row-detail-inner">
+                <div className="row-detail-image">
+                  <div className="row-detail-image-inner">
+                    {reason.img ? (
+                      <img
+                        src={reason.img}
+                        alt={reason.t}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          position: "absolute",
+                          inset: 0,
+                          display: "block",
+                        }}
+                      />
+                    ) : (
+                      <>
+                        <span className="row-detail-stripe" />
+                        <span className="row-detail-label">
+                          [ photo · {reason.t} ]
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="row-detail-text">
+                  <div className="row-detail-meta">
+                    <span className="row-detail-num">№ {num}</span>
+                    <span className="row-detail-of">of twenty-two</span>
+                  </div>
+                  <p className="row-detail-body">{reason.body}</p>
+                  <button
+                    className="row-detail-close"
+                    onClick={() => onToggle(index)}
+                  >
+                    <span>close</span>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 14 14"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                    >
+                      <path d="M3 3l8 8M11 3l-8 8" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </li>
+        );
+      }
+
+      // ── APP ────────────────────────────────────────────────────────────────
+      // Drop your hero image URL here:
+      const HERO_IMG =
+        "https://www.verywellhealth.com/thmb/TETuvmUlNKPTnT9NN6tFGKu35jI=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/VWH-GettyImages-871613240-f0c60fc126404e3abc606d4bfacb7443.jpg";
+
+      function App() {
+        const [open, setOpen] = React.useState(null);
+        const onToggle = (i) => setOpen((cur) => (cur === i ? null : i));
+
+        return (
+          <>
+            <HorizontalIntro />
+
+            {/* ── Hero photo — between intro and list ── */}
+            <div
+              className="hero-photo"
+              style={{ display: HERO_IMG ? "block" : "none" }}
+            >
+              <img src={HERO_IMG} alt="kakuly" />
+
+              <div className="hero-photo-caption">kakuly · twenty-two</div>
+            </div>
+
+            <main className="list">
+              <header className="list-head">
+                <span className="list-eyebrow">
+                  a list, in love · twenty-two reasons
+                </span>
+                <h2 className="list-h2">
+                  she is, simply,
+                  <br />
+                  <em>the best person</em>
+                  <br />
+                  in the world.
+                </h2>
+                <span className="list-hint">tap any one →</span>
+              </header>
+
+              <ol
+                className={`rows${open != null ? " has-open" : ""}`}
+                role="list"
+              >
+                {REASONS.map((r, i) => (
+                  <ReasonRow
+                    key={i}
+                    index={i}
+                    reason={r}
+                    total={REASONS.length}
+                    isOpen={open === i}
+                    anyOpen={open != null}
+                    onToggle={onToggle}
+                  />
+                ))}
+              </ol>
+
+              <footer className="list-foot">
+                <div className="list-foot-line">
+                  happy birthday,{" "}
+                  <span className="list-foot-em">my tubelight</span>.
+                </div>
+                <div className="list-foot-sub">
+                  — scroll back up if you want to read it again.
+                </div>
+              </footer>
+            </main>
+            <div className="grain" aria-hidden="true" />
+          </>
+        );
+      }
+
+      window.App = App;
+    </script>
+
+    <script type="text/babel">
+      const TWEAK_DEFAULTS = {
+        accentA: "#ee6a6a",
+        accentB: "#7ad3c8",
+        grain: 0.07,
+        bg: "#1a1020",
+        bgGlow: "#2c1832",
+        ink: "#f6e9d8",
+        preset: "aubergine",
+      };
+
+      const PRESETS = {
+        aubergine: {
+          bg: "#1a1020",
+          bgGlow: "#2c1832",
+          ink: "#f6e9d8",
+          accentA: "#ee6a6a",
+          accentB: "#7ad3c8",
+        },
+        midnight: {
+          bg: "#0f1428",
+          bgGlow: "#1a2148",
+          ink: "#ecead8",
+          accentA: "#ff7c7c",
+          accentB: "#86dfd2",
+        },
+        wine: {
+          bg: "#1f0e14",
+          bgGlow: "#3a141d",
+          ink: "#f3e3cf",
+          accentA: "#ff8a6a",
+          accentB: "#7ad3c8",
+        },
+        forest: {
+          bg: "#0e1a17",
+          bgGlow: "#16302a",
+          ink: "#ecead8",
+          accentA: "#e88a64",
+          accentB: "#7ad3c8",
+        },
+        cocoa: {
+          bg: "#1a120c",
+          bgGlow: "#2a1a10",
+          ink: "#f6e9d8",
+          accentA: "#e88a5a",
+          accentB: "#7ad3c8",
+        },
+      };
+
+      function Root() {
+        const [t, setT] = useTweaks(TWEAK_DEFAULTS);
+
+        React.useEffect(() => {
+          const r = document.documentElement;
+          r.style.setProperty("--accent-a", t.accentA);
+          r.style.setProperty("--accent-b", t.accentB);
+          r.style.setProperty("--grain", t.grain);
+          r.style.setProperty("--bg", t.bg);
+          r.style.setProperty("--bg-glow", t.bgGlow);
+          r.style.setProperty("--ink", t.ink);
+        }, [t.accentA, t.accentB, t.grain, t.bg, t.bgGlow, t.ink]);
+
+        const applyPreset = (name) => {
+          const p = PRESETS[name];
+          if (!p) return;
+          setT({ preset: name, ...p });
+        };
+
+        return (
+          <>
+            <App />
+            <TweaksPanel title="Tweaks">
+              <TweakSection title="Mood">
+                <TweakSelect
+                  label="preset"
+                  value={t.preset}
+                  options={Object.keys(PRESETS)}
+                  onChange={applyPreset}
+                />
+              </TweakSection>
+              <TweakSection title="Palette">
+                <TweakColor
+                  label="background"
+                  value={t.bg}
+                  onChange={(v) => setT({ bg: v })}
+                />
+                <TweakColor
+                  label="bg glow"
+                  value={t.bgGlow}
+                  onChange={(v) => setT({ bgGlow: v })}
+                />
+                <TweakColor
+                  label="ink (text)"
+                  value={t.ink}
+                  onChange={(v) => setT({ ink: v })}
+                />
+                <TweakColor
+                  label="accent A"
+                  value={t.accentA}
+                  onChange={(v) => setT({ accentA: v })}
+                />
+                <TweakColor
+                  label="accent B"
+                  value={t.accentB}
+                  onChange={(v) => setT({ accentB: v })}
+                />
+              </TweakSection>
+              <TweakSection title="Atmosphere">
+                <TweakSlider
+                  label="film grain"
+                  min={0}
+                  max={0.25}
+                  step={0.01}
+                  value={t.grain}
+                  onChange={(v) => setT({ grain: v })}
+                />
+              </TweakSection>
+            </TweaksPanel>
+          </>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<Root />);
+    </script>
+
+    <script>
+      (function () {
+        // ── Overlay image helper (viewport-relative) ──────────────────────────
+        // Position and size are in % of viewport width (vw).
+        // The image scrolls with the page (position:absolute).
+        // Drag to reposition at runtime.
+
+        function addOverlay(src, opts) {
+          opts = opts || {};
+
+          var img = document.createElement("img");
+          img.src = src;
+          img.id = opts.id || "overlay-" + Date.now();
+
+          // Convert vw percentages → px on place, then update on resize
+          function applyPos() {
+            var vw = window.innerWidth;
+            var vh = window.innerHeight;
+            img.style.width = ((opts.width ?? 15) / 100) * vw + "px";
+            img.style.left = ((opts.left ?? 5) / 100) * vw + "px";
+            img.style.top =
+              ((opts.top ?? 20) / 100) * (document.body.scrollHeight || vh) +
+              "px";
+          }
+
+          img.style.cssText = [
+            "position:absolute",
+            "cursor:grab",
+            "z-index:500",
+            "user-select:none",
+            "pointer-events:auto",
+            "opacity:" + (opts.opacity ?? 1),
+          ].join(";");
+
+          document.body.appendChild(img);
+          applyPos();
+
+          // Re-apply on resize so it stays proportional
+          window.addEventListener("resize", applyPos);
+
+          // Drag support (works in px at runtime, that's fine)
+          img.addEventListener("mousedown", function (e) {
+            e.preventDefault();
+            img.style.cursor = "grabbing";
+            var r = img.getBoundingClientRect();
+            var ox = e.clientX - r.left + window.scrollX;
+            var oy = e.clientY - r.top + window.scrollY;
+            function move(ev) {
+              img.style.left = ev.clientX - ox + window.scrollX + "px";
+              img.style.top = ev.clientY - oy + window.scrollY + "px";
+            }
+            function up() {
+              img.style.cursor = "grab";
+              document.removeEventListener("mousemove", move);
+              document.removeEventListener("mouseup", up);
+            }
+            document.addEventListener("mousemove", move);
+            document.addEventListener("mouseup", up);
+          });
+
+          return img;
+        }
+
+        // ── Place your images here ───────────────────────────────────────────
+        // All values are percentages of viewport width (vw), EXCEPT top which
+        // is a percentage of the total page height.
+        //
+        //   left:    % from left edge of viewport   (0 = far left, 100 = far right)
+        //   top:     % from top of the full page    (0 = very top, 50 = halfway down)
+        //   width:   % of viewport width            (15 = 15vw)
+        //   opacity: 0 (invisible) → 1 (solid)
+
+        addOverlay(
+          "https://www.southwales.ac.uk/media/university-of-south-wales/site-assets/images/08-subjects/art/subject-art-3393.jpg",
+          {
+            left: 45,
+            top: 450,
+            width: 45,
+            opacity: 1,
+          },
+        );
+        // addOverlay('https://another.png', { left: 75, top: 35, width: 10, opacity: 0.9 });
+      })();
+    </script>
+  </body>
+</html>
